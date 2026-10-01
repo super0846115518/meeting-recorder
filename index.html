@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
+
+  <title>手機會議錄音測試</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f4f6f8;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Noto Sans TC",
+        "Microsoft JhengHei",
+        sans-serif;
+      color: #202124;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 15px 0 8px;
+      font-size: 26px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 16px;
+      box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+    }
+
+    .status {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+
+    .timer {
+      text-align: center;
+      font-size: 48px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      margin: 20px 0;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    #startBtn {
+      background: #1976d2;
+      color: white;
+    }
+
+    #stopBtn {
+      background: #d32f2f;
+      color: white;
+    }
+
+    #playBtn {
+      background: #388e3c;
+      color: white;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .info {
+      background: #eef4ff;
+      border-radius: 12px;
+      padding: 14px;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .error {
+      display: none;
+      background: #ffebee;
+      color: #b71c1c;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 15px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .success {
+      display: none;
+      background: #e8f5e9;
+      color: #1b5e20;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 15px;
+    }
+
+    audio {
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    .diagnostic {
+      font-family: monospace;
+      font-size: 12px;
+      background: #f7f7f7;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 15px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🎙️ 手機會議錄音</h1>
+
+  <div class="subtitle">
+    Android Chrome 錄音功能測試版
+  </div>
+
+  <div class="card">
+
+    <div id="status" class="status">
+      尚未開始錄音
+    </div>
+
+    <div id="timer" class="timer">
+      00:00
+    </div>
+
+    <button id="startBtn">
+      🎙️ 開始錄音
+    </button>
+
+    <button id="stopBtn" disabled>
+      ⏹ 結束錄音
+    </button>
+
+    <button id="playBtn" disabled>
+      ▶️ 播放錄音
+    </button>
+
+    <div id="success" class="success"></div>
+
+    <div id="error" class="error"></div>
+
+    <audio id="audioPlayer" controls style="display:none;"></audio>
+
+  </div>
+
+  <div class="card">
+
+    <div class="info">
+      <strong>本測試只驗證手機錄音功能</strong><br>
+      ① 點擊開始錄音<br>
+      ② Android Chrome 應要求麥克風權限<br>
+      ③ 選擇「允許」<br>
+      ④ 錄音約 10 秒<br>
+      ⑤ 點擊結束錄音<br>
+      ⑥ 播放錄音確認聲音正常
+    </div>
+
+    <div id="diagnostic" class="diagnostic"></div>
+
+  </div>
+
+</div>
+
+<script>
+
+let mediaStream = null;
+let mediaRecorder = null;
+let audioChunks = [];
+let audioBlob = null;
+let audioUrl = null;
+
+let timerInterval = null;
+let startTime = null;
+
+
+/* ================================
+   DOM
+================================ */
+
+const startBtn = document.getElementById("startBtn");
+const stopBtn = document.getElementById("stopBtn");
+const playBtn = document.getElementById("playBtn");
+
+const statusEl = document.getElementById("status");
+const timerEl = document.getElementById("timer");
+
+const errorEl = document.getElementById("error");
+const successEl = document.getElementById("success");
+
+const audioPlayer = document.getElementById("audioPlayer");
+const diagnosticEl = document.getElementById("diagnostic");
+
+
+/* ================================
+   環境檢查
+================================ */
+
+function checkEnvironment() {
+
+  const secure =
+    window.isSecureContext;
+
+  const mediaDevices =
+    !!navigator.mediaDevices;
+
+  const getUserMedia =
+    !!(
+      navigator.mediaDevices &&
+      navigator.mediaDevices.getUserMedia
+    );
+
+  diagnosticEl.innerHTML =
+    "HTTPS / Secure Context："
+    + (secure ? "OK" : "FAIL")
+    + "<br>"
+    + "navigator.mediaDevices："
+    + (mediaDevices ? "OK" : "FAIL")
+    + "<br>"
+    + "getUserMedia："
+    + (getUserMedia ? "OK" : "FAIL")
+    + "<br>"
+    + "MediaRecorder："
+    + (window.MediaRecorder ? "OK" : "FAIL")
+    + "<br>"
+    + "瀏覽器："
+    + navigator.userAgent;
+
+}
+
+checkEnvironment();
+
+
+/* ================================
+   錯誤處理
+================================ */
+
+function showError(message) {
+
+  errorEl.style.display = "block";
+  errorEl.textContent = message;
+
+  successEl.style.display = "none";
+
+}
+
+function clearMessages() {
+
+  errorEl.style.display = "none";
+  successEl.style.display = "none";
+
+}
+
+function showSuccess(message) {
+
+  successEl.style.display = "block";
+  successEl.textContent = message;
+
+  errorEl.style.display = "none";
+
+}
+
+
+/* ================================
+   計時器
+================================ */
+
+function startTimer() {
+
+  startTime = Date.now();
+
+  timerInterval = setInterval(() => {
+
+    const elapsed =
+      Math.floor(
+        (Date.now() - startTime) / 1000
+      );
+
+    const minutes =
+      Math.floor(elapsed / 60)
+        .toString()
+        .padStart(2, "0");
+
+    const seconds =
+      (elapsed % 60)
+        .toString()
+        .padStart(2, "0");
+
+    timerEl.textContent =
+      minutes + ":" + seconds;
+
+  }, 250);
+
+}
+
+
+function stopTimer() {
+
+  clearInterval(timerInterval);
+
+  timerInterval = null;
+
+}
+
+
+/* ================================
+   開始錄音
+================================ */
+
+async function startRecording() {
+
+  clearMessages();
+
+  if (!window.isSecureContext) {
+
+    showError(
+      "目前不是安全 HTTPS 網頁。\n\n"
+      + "請使用 https:// 開頭的網址。"
+    );
+
+    return;
+  }
+
+
+  if (
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.getUserMedia
+  ) {
+
+    showError(
+      "此瀏覽器無法使用 getUserMedia。\n\n"
+      + "請使用最新版 Android Chrome。"
+    );
+
+    return;
+  }
+
+
+  if (!window.MediaRecorder) {
+
+    showError(
+      "此瀏覽器不支援 MediaRecorder。"
+    );
+
+    return;
+  }
+
+
+  try {
+
+    statusEl.textContent =
+      "正在要求麥克風權限…";
+
+    /*
+      這裡直接由使用者點擊事件呼叫
+      getUserMedia()
+    */
+
+    mediaStream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+
+    /*
+      Android Chrome 通常支援 audio/webm
+    */
+
+    let mimeType = "";
+
+    if (
+      MediaRecorder.isTypeSupported(
+        "audio/webm;codecs=opus"
+      )
+    ) {
+
+      mimeType =
+        "audio/webm;codecs=opus";
+
+    } else if (
+      MediaRecorder.isTypeSupported(
+        "audio/webm"
+      )
+    ) {
+
+      mimeType = "audio/webm";
+
+    }
+
+
+    const options =
+      mimeType
+        ? { mimeType }
+        : undefined;
+
+
+    audioChunks = [];
+
+
+    mediaRecorder =
+      new MediaRecorder(
+        mediaStream,
+        options
+      );
+
+
+    mediaRecorder.ondataavailable =
+      function(event) {
+
+        if (event.data && event.data.size > 0) {
+
+          audioChunks.push(event.data);
+
+        }
+
+      };
+
+
+    mediaRecorder.onstop =
+      function() {
+
+        audioBlob =
+          new Blob(
+            audioChunks,
+            {
+              type:
+                mediaRecorder.mimeType ||
+                "audio/webm"
+            }
+          );
+
+
+        if (audioUrl) {
+
+          URL.revokeObjectURL(audioUrl);
+
+        }
+
+
+        audioUrl =
+          URL.createObjectURL(
+            audioBlob
+          );
+
+
+        audioPlayer.src =
+          audioUrl;
+
+        audioPlayer.style.display =
+          "block";
+
+        playBtn.disabled =
+          false;
+
+
+        showSuccess(
+          "錄音完成。\n"
+          + "檔案大小："
+          + formatBytes(audioBlob.size)
+          + "\n"
+          + "格式："
+          + audioBlob.type
+        );
+
+
+        statusEl.textContent =
+          "錄音完成";
+
+      };
+
+
+    mediaRecorder.onerror =
+      function(event) {
+
+        showError(
+          "MediaRecorder 發生錯誤：\n"
+          + event.error
+        );
+
+      };
+
+
+    mediaRecorder.start(1000);
+
+
+    startTimer();
+
+
+    statusEl.textContent =
+      "🔴 正在錄音";
+
+    startBtn.disabled =
+      true;
+
+    stopBtn.disabled =
+      false;
+
+    playBtn.disabled =
+      true;
+
+
+  } catch (error) {
+
+    console.error(
+      "getUserMedia error:",
+      error
+    );
+
+
+    let message =
+      "無法開始錄音。\n\n";
+
+
+    message +=
+      "錯誤名稱："
+      + error.name
+      + "\n";
+
+
+    message +=
+      "錯誤訊息："
+      + error.message
+      + "\n\n";
+
+
+    if (
+      error.name ===
+      "NotAllowedError"
+    ) {
+
+      message +=
+        "Chrome 拒絕了麥克風權限。\n"
+        + "請確認網站麥克風權限已允許。";
+
+    } else if (
+      error.name ===
+      "NotFoundError"
+    ) {
+
+      message +=
+        "找不到手機麥克風。";
+
+    } else if (
+      error.name ===
+      "NotReadableError"
+    ) {
+
+      message +=
+        "麥克風可能被其他 App 使用。";
+
+    } else if (
+      error.name ===
+      "SecurityError"
+    ) {
+
+      message +=
+        "瀏覽器因安全政策拒絕麥克風。";
+
+    } else {
+
+      message +=
+        "請查看下方系統診斷資訊。";
+
+    }
+
+
+    showError(message);
+
+
+    statusEl.textContent =
+      "錄音啟動失敗";
+
+  }
+
+}
+
+
+/* ================================
+   結束錄音
+================================ */
+
+function stopRecording() {
+
+  if (
+    !mediaRecorder ||
+    mediaRecorder.state === "inactive"
+  ) {
+
+    return;
+
+  }
+
+
+  mediaRecorder.stop();
+
+  stopTimer();
+
+
+  if (mediaStream) {
+
+    mediaStream
+      .getTracks()
+      .forEach(
+        track => track.stop()
+      );
+
+  }
+
+
+  startBtn.disabled =
+    false;
+
+  stopBtn.disabled =
+    true;
+
+}
+
+
+/* ================================
+   播放
+================================ */
+
+function playRecording() {
+
+  if (!audioPlayer.src) {
+
+    return;
+
+  }
+
+  audioPlayer.play();
+
+}
+
+
+/* ================================
+   格式化大小
+================================ */
+
+function formatBytes(bytes) {
+
+  if (bytes === 0) {
+
+    return "0 Bytes";
+
+  }
+
+  const units = [
+    "Bytes",
+    "KB",
+    "MB",
+    "GB"
+  ];
+
+  const i =
+    Math.floor(
+      Math.log(bytes) /
+      Math.log(1024)
+    );
+
+  return (
+    (bytes /
+      Math.pow(1024, i))
+      .toFixed(2)
+    + " "
+    + units[i]
+  );
+
+}
+
+
+/* ================================
+   按鈕
+================================ */
+
+startBtn.addEventListener(
+  "click",
+  startRecording
+);
+
+stopBtn.addEventListener(
+  "click",
+  stopRecording
+);
+
+playBtn.addEventListener(
+  "click",
+  playRecording
+);
+
+</script>
+
+</body>
+</html>
