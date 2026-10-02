@@ -244,10 +244,18 @@ button:disabled {
 
     <select id="segmentMinutes">
 
+      <option value="5">
+        每 5 分鐘
+      </option>
+      
       <option value="10">
         每 10 分鐘
       </option>
 
+      <option value="20">
+        每 20 分鐘
+      </option>
+      
       <option value="30">
         每 30 分鐘
       </option>
@@ -1015,10 +1023,7 @@ function checkSegmentLimit() {
 
 
   const limit =
-    Number(
-      segmentMinutes.value
-    ) * 60;
-
+    20;
 
   if (
     elapsed >= limit
