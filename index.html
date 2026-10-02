@@ -90,6 +90,10 @@ select {
   color: #555;
 }
 
+.rotating {
+  color: #e65100;
+}
+
 .timer {
   text-align: center;
   font-size: 52px;
@@ -104,6 +108,21 @@ select {
   color: #666;
   font-size: 14px;
   margin-bottom: 20px;
+}
+
+.progress-box {
+  height: 8px;
+  background: #eeeeee;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 12px 0 20px;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #1976d2;
+  transition: width .3s linear;
 }
 
 button {
@@ -151,6 +170,7 @@ button:disabled {
   color: #666;
   font-size: 13px;
   margin-top: 5px;
+  line-height: 1.6;
 }
 
 .segment audio {
@@ -203,10 +223,15 @@ button:disabled {
   justify-content: space-between;
   padding: 7px 0;
   border-bottom: 1px solid #eee;
+  gap: 15px;
 }
 
 .summary-row:last-child {
   border-bottom: 0;
+}
+
+.summary-row strong {
+  text-align: right;
 }
 
 </style>
@@ -222,7 +247,9 @@ button:disabled {
   </div>
 
 
-  <!-- 會議設定 -->
+  <!-- ==============================
+       會議設定
+  =============================== -->
 
   <div class="card">
 
@@ -247,15 +274,15 @@ button:disabled {
       <option value="5">
         每 5 分鐘
       </option>
-      
-      <option value="10">
+
+      <option value="10" selected>
         每 10 分鐘
       </option>
 
       <option value="20">
         每 20 分鐘
       </option>
-      
+
       <option value="30">
         每 30 分鐘
       </option>
@@ -269,7 +296,9 @@ button:disabled {
   </div>
 
 
-  <!-- 錄音控制 -->
+  <!-- ==============================
+       錄音控制
+  =============================== -->
 
   <div class="card">
 
@@ -294,6 +323,12 @@ button:disabled {
       尚無錄音分段
     </div>
 
+    <div class="progress-box">
+      <div
+        id="progressBar"
+        class="progress-bar"
+      ></div>
+    </div>
 
     <button
       id="startBtn"
@@ -301,7 +336,6 @@ button:disabled {
     >
       🎙️ 開始會議錄音
     </button>
-
 
     <button
       id="stopBtn"
@@ -311,7 +345,6 @@ button:disabled {
       ⏹ 結束會議
     </button>
 
-
     <div
       id="message"
       class="hidden"
@@ -320,7 +353,9 @@ button:disabled {
   </div>
 
 
-  <!-- 會議統計 -->
+  <!-- ==============================
+       會議統計
+  =============================== -->
 
   <div class="card">
 
@@ -337,6 +372,11 @@ button:disabled {
     </div>
 
     <div class="summary-row">
+      <span>目前分段</span>
+      <strong id="summaryCurrentSegment">0</strong>
+    </div>
+
+    <div class="summary-row">
       <span>已完成分段</span>
       <strong id="summarySegments">0</strong>
     </div>
@@ -349,7 +389,9 @@ button:disabled {
   </div>
 
 
-  <!-- 錄音分段 -->
+  <!-- ==============================
+       錄音分段
+  =============================== -->
 
   <div class="card">
 
@@ -362,7 +404,9 @@ button:disabled {
   </div>
 
 
-  <!-- 系統診斷 -->
+  <!-- ==============================
+       系統診斷
+  =============================== -->
 
   <div class="card">
 
@@ -400,13 +444,13 @@ let totalTimer = null;
 
 let segmentTimer = null;
 
-let currentSegmentBlob = null;
-
-let segmentUrl = null;
-
 let isRecording = false;
 
 let stoppingMeeting = false;
+
+let rotatingSegment = false;
+
+let completedSegmentCount = 0;
 
 
 /* =====================================================
@@ -434,6 +478,9 @@ const timerEl =
 const segmentInfo =
   document.getElementById("segmentInfo");
 
+const progressBar =
+  document.getElementById("progressBar");
+
 const messageEl =
   document.getElementById("message");
 
@@ -449,15 +496,24 @@ const summaryName =
 const summaryInterval =
   document.getElementById("summaryInterval");
 
+const summaryCurrentSegment =
+  document.getElementById(
+    "summaryCurrentSegment"
+  );
+
 const summarySegments =
-  document.getElementById("summarySegments");
+  document.getElementById(
+    "summarySegments"
+  );
 
 const summaryDuration =
-  document.getElementById("summaryDuration");
+  document.getElementById(
+    "summaryDuration"
+  );
 
 
 /* =====================================================
-   工具
+   格式化時間
 ===================================================== */
 
 function formatTime(seconds) {
@@ -489,6 +545,10 @@ function formatTime(seconds) {
 }
 
 
+/* =====================================================
+   檔案大小
+===================================================== */
+
 function formatBytes(bytes) {
 
   if (!bytes) {
@@ -518,29 +578,37 @@ function formatBytes(bytes) {
 }
 
 
+/* =====================================================
+   訊息
+===================================================== */
+
 function showMessage(
   text,
   type = "success"
 ) {
 
-  messageEl.className = type;
+  messageEl.className =
+    type;
 
-  messageEl.textContent = text;
+  messageEl.textContent =
+    text;
 
 }
 
 
 function clearMessage() {
 
-  messageEl.className = "hidden";
+  messageEl.className =
+    "hidden";
 
-  messageEl.textContent = "";
+  messageEl.textContent =
+    "";
 
 }
 
 
 /* =====================================================
-   系統診斷
+   麥克風診斷
 ===================================================== */
 
 async function runDiagnostics() {
@@ -624,7 +692,7 @@ runDiagnostics();
 
 
 /* =====================================================
-   計時器
+   更新計時器
 ===================================================== */
 
 function updateTimers() {
@@ -633,15 +701,21 @@ function updateTimers() {
     return;
   }
 
+
   const now =
     Date.now();
 
+
   const totalSeconds =
-    (now - meetingStartTime)
-    / 1000;
+    (
+      now -
+      meetingStartTime
+    ) / 1000;
+
 
   timerEl.textContent =
     formatTime(totalSeconds);
+
 
   summaryDuration.textContent =
     formatTime(totalSeconds);
@@ -650,13 +724,31 @@ function updateTimers() {
   if (segmentStartTime) {
 
     const segmentSeconds =
-      (now - segmentStartTime)
-      / 1000;
+      (
+        now -
+        segmentStartTime
+      ) / 1000;
+
 
     const limitSeconds =
       Number(
         segmentMinutes.value
       ) * 60;
+
+
+    const percentage =
+      Math.min(
+        100,
+        (
+          segmentSeconds /
+          limitSeconds
+        ) * 100
+      );
+
+
+    progressBar.style.width =
+      percentage + "%";
+
 
     segmentInfo.textContent =
       `第 ${segmentIndex} 段｜`
@@ -675,6 +767,7 @@ function updateTimers() {
 function createRecorder() {
 
   let mimeType = "";
+
 
   if (
     MediaRecorder.isTypeSupported(
@@ -703,15 +796,45 @@ function createRecorder() {
       : undefined;
 
 
-  const recorder =
-    new MediaRecorder(
-      mediaStream,
-      options
-    );
+  return new MediaRecorder(
+    mediaStream,
+    options
+  );
+}
 
 
-  recorder.ondataavailable =
-    event => {
+/* =====================================================
+   啟動分段
+===================================================== */
+
+function startSegment() {
+
+  if (
+    !mediaStream ||
+    !isRecording
+  ) {
+
+    return;
+
+  }
+
+
+  audioChunks = [];
+
+  rotatingSegment = false;
+
+  segmentIndex++;
+
+  segmentStartTime =
+    Date.now();
+
+
+  mediaRecorder =
+    createRecorder();
+
+
+  mediaRecorder.ondataavailable =
+    function(event) {
 
       if (
         event.data &&
@@ -727,8 +850,8 @@ function createRecorder() {
     };
 
 
-  recorder.onerror =
-    event => {
+  mediaRecorder.onerror =
+    function(event) {
 
       showMessage(
         "錄音發生錯誤："
@@ -743,35 +866,12 @@ function createRecorder() {
     };
 
 
-  return recorder;
-}
-
-
-/* =====================================================
-   開始一個分段
-===================================================== */
-
-function startSegment() {
-
-  if (!mediaStream) {
-    return;
-  }
-
-
-  audioChunks = [];
-
-  segmentIndex++;
-
-  segmentStartTime =
-    Date.now();
-
-
-  mediaRecorder =
-    createRecorder();
-
-
   mediaRecorder.onstop =
-    handleSegmentStop;
+    function() {
+
+      finishSegment();
+
+    };
 
 
   mediaRecorder.start(1000);
@@ -784,6 +884,10 @@ function startSegment() {
     "status recording";
 
 
+  summaryCurrentSegment.textContent =
+    segmentIndex;
+
+
   segmentInfo.textContent =
     `第 ${segmentIndex} 段正在錄音`;
 
@@ -791,32 +895,38 @@ function startSegment() {
 
 
 /* =====================================================
-   分段結束
+   完成分段
 ===================================================== */
 
-function handleSegmentStop() {
+function finishSegment() {
+
+  const recorder =
+    mediaRecorder;
+
 
   const blob =
     new Blob(
       audioChunks,
       {
         type:
-          mediaRecorder.mimeType ||
+          recorder.mimeType ||
           "audio/webm"
       }
     );
 
 
-  const start =
-    segmentStartTime;
-
-
-  const end =
+  const endTime =
     Date.now();
 
 
   const duration =
-    (end - start) / 1000;
+    (
+      endTime -
+      segmentStartTime
+    ) / 1000;
+
+
+  completedSegmentCount++;
 
 
   saveSegment(
@@ -826,34 +936,73 @@ function handleSegmentStop() {
   );
 
 
+  summarySegments.textContent =
+    completedSegmentCount;
+
+
+  audioChunks = [];
+
+
+  /*
+   * 如果使用者已經按下「結束會議」
+   * 就不要重新開始。
+   */
+
   if (
-    isRecording &&
-    !stoppingMeeting
+    stoppingMeeting ||
+    !isRecording
   ) {
 
-    setTimeout(
-      () => {
+    finishMeetingAfterLastSegment();
 
-        if (
-          isRecording &&
-          !stoppingMeeting
-        ) {
-
-          startSegment();
-
-        }
-
-      },
-      300
-    );
+    return;
 
   }
+
+
+  /*
+   * 正常自動切段
+   */
+
+  statusEl.textContent =
+    `⏳ 第 ${segmentIndex} 段完成，`
+    + `準備開始第 ${segmentIndex + 1} 段`;
+
+  statusEl.className =
+    "status rotating";
+
+
+  progressBar.style.width =
+    "0%";
+
+
+  /*
+   * 稍微等待，讓前一段
+   * onstop / Blob 完整處理後
+   * 再建立下一個 Recorder。
+   */
+
+  setTimeout(
+    function() {
+
+      if (
+        isRecording &&
+        !stoppingMeeting
+      ) {
+
+        startSegment();
+
+      }
+
+    },
+    300
+  );
 
 }
 
 
 /* =====================================================
-   儲存分段
+   儲存分段到目前瀏覽器記憶體
 ===================================================== */
 
 function saveSegment(
@@ -873,7 +1022,8 @@ function saveSegment(
     "尚無完成的錄音分段"
   ) {
 
-    segmentsEl.innerHTML = "";
+    segmentsEl.innerHTML =
+      "";
 
   }
 
@@ -921,6 +1071,9 @@ function saveSegment(
   audio.controls =
     true;
 
+  audio.preload =
+    "metadata";
+
   audio.src =
     url;
 
@@ -938,15 +1091,17 @@ function saveSegment(
 
 
   download.onclick =
-    () => {
+    function() {
 
       const a =
         document.createElement(
           "a"
         );
 
+
       a.href =
         url;
+
 
       const safeName =
         (
@@ -961,10 +1116,16 @@ function saveSegment(
 
       a.download =
         `${safeName}_`
-        + `segment_${String(index).padStart(3, "0")}.webm`;
+        + `segment_`
+        + `${String(index).padStart(3, "0")}`
+        + `.webm`;
 
+
+      document.body.appendChild(a);
 
       a.click();
+
+      a.remove();
 
     };
 
@@ -990,24 +1151,19 @@ function saveSegment(
     wrapper
   );
 
-
-  summarySegments.textContent =
-    document.querySelectorAll(
-      ".segment"
-    ).length;
-
 }
 
 
 /* =====================================================
-   自動分段監控
+   檢查是否到達分段時間
 ===================================================== */
 
 function checkSegmentLimit() {
 
   if (
     !isRecording ||
-    !segmentStartTime
+    !segmentStartTime ||
+    rotatingSegment
   ) {
 
     return;
@@ -1021,10 +1177,12 @@ function checkSegmentLimit() {
       segmentStartTime
     ) / 1000;
 
-const limit =
+
+  const limit =
     Number(
-        segmentMinutes.value
+      segmentMinutes.value
     ) * 60;
+
 
   if (
     elapsed >= limit
@@ -1036,6 +1194,10 @@ const limit =
 
 }
 
+
+/* =====================================================
+   執行自動切段
+===================================================== */
 
 function rotateSegment() {
 
@@ -1050,8 +1212,20 @@ function rotateSegment() {
   }
 
 
+  if (rotatingSegment) {
+    return;
+  }
+
+
+  rotatingSegment =
+    true;
+
+
   statusEl.textContent =
     `⏳ 正在完成第 ${segmentIndex} 段`;
+
+  statusEl.className =
+    "status rotating";
 
 
   mediaRecorder.stop();
@@ -1097,7 +1271,18 @@ async function startMeeting() {
   }
 
 
-  if (!meetingName.value.trim()) {
+  if (
+    isRecording
+  ) {
+
+    return;
+
+  }
+
+
+  if (
+    !meetingName.value.trim()
+  ) {
 
     meetingName.value =
       "未命名會議";
@@ -1131,11 +1316,24 @@ async function startMeeting() {
       Date.now();
 
 
-    segmentIndex = 0;
+    segmentIndex =
+      0;
 
-    isRecording = true;
 
-    stoppingMeeting = false;
+    completedSegmentCount =
+      0;
+
+
+    isRecording =
+      true;
+
+
+    stoppingMeeting =
+      false;
+
+
+    rotatingSegment =
+      false;
 
 
     summaryName.textContent =
@@ -1146,8 +1344,33 @@ async function startMeeting() {
       `每 ${segmentMinutes.value} 分鐘`;
 
 
+    summaryCurrentSegment.textContent =
+      "0";
+
+
+    summarySegments.textContent =
+      "0";
+
+
+    summaryDuration.textContent =
+      "00:00:00";
+
+
+    timerEl.textContent =
+      "00:00:00";
+
+
+    progressBar.style.width =
+      "0%";
+
+
+    segmentsEl.innerHTML =
+      "尚無完成的錄音分段";
+
+
     startBtn.disabled =
       true;
+
 
     stopBtn.disabled =
       false;
@@ -1171,7 +1394,8 @@ async function startMeeting() {
 
 
     showMessage(
-      "會議錄音已開始。",
+      `會議錄音已開始。`
+      + `目前設定：每 ${segmentMinutes.value} 分鐘自動分段。`,
       "success"
     );
 
@@ -1190,6 +1414,18 @@ async function startMeeting() {
       + "\n"
       + "錯誤訊息："
       + error.message;
+
+
+    if (
+      error.name ===
+      "NotAllowedError"
+    ) {
+
+      message +=
+        "\n\nChrome 拒絕了麥克風權限。"
+        + "\n請確認網站麥克風權限已允許。";
+
+    }
 
 
     showMessage(
@@ -1212,16 +1448,30 @@ async function startMeeting() {
 
 function stopMeeting() {
 
-  if (!isRecording) {
+  if (
+    !isRecording
+  ) {
+
     return;
+
   }
 
 
   stoppingMeeting =
     true;
 
-  isRecording =
-    false;
+
+  /*
+   * 不要立刻把 isRecording 設成 false。
+   * 必須讓最後一段 Recorder 完成 onstop，
+   * 才能確保最後一段音訊 Blob 被建立。
+   */
+
+  statusEl.textContent =
+    `⏳ 正在完成第 ${segmentIndex} 段…`;
+
+  statusEl.className =
+    "status rotating";
 
 
   if (
@@ -1239,6 +1489,41 @@ function stopMeeting() {
 
 
   if (
+    mediaRecorder &&
+    mediaRecorder.state !==
+    "inactive"
+  ) {
+
+    mediaRecorder.stop();
+
+  } else {
+
+    finishMeetingAfterLastSegment();
+
+  }
+
+}
+
+
+/* =====================================================
+   最後一段完成後結束
+===================================================== */
+
+function finishMeetingAfterLastSegment() {
+
+  isRecording =
+    false;
+
+
+  stoppingMeeting =
+    false;
+
+
+  rotatingSegment =
+    false;
+
+
+  if (
     totalTimer
   ) {
 
@@ -1248,17 +1533,6 @@ function stopMeeting() {
 
     totalTimer =
       null;
-
-  }
-
-
-  if (
-    mediaRecorder &&
-    mediaRecorder.state !==
-    "inactive"
-  ) {
-
-    mediaRecorder.stop();
 
   }
 
@@ -1281,8 +1555,13 @@ function stopMeeting() {
   startBtn.disabled =
     false;
 
+
   stopBtn.disabled =
     true;
+
+
+  progressBar.style.width =
+    "0%";
 
 
   statusEl.textContent =
@@ -1293,13 +1572,17 @@ function stopMeeting() {
 
 
   segmentInfo.textContent =
-    `共完成 ${segmentIndex} 個錄音分段`;
+    `共完成 ${completedSegmentCount} 個錄音分段`;
 
 
   showMessage(
-    `會議錄音完成，共 ${segmentIndex} 個分段。`,
+    `會議錄音完成，共 ${completedSegmentCount} 個分段。`,
     "success"
   );
+
+
+  mediaRecorder =
+    null;
 
 }
 
@@ -1312,7 +1595,9 @@ window.addEventListener(
   "beforeunload",
   function(event) {
 
-    if (isRecording) {
+    if (
+      isRecording
+    ) {
 
       event.preventDefault();
 
@@ -1320,6 +1605,68 @@ window.addEventListener(
         "";
 
     }
+
+  }
+);
+
+
+/* =====================================================
+   頁面切換提醒
+===================================================== */
+
+document.addEventListener(
+  "visibilitychange",
+  function() {
+
+    if (
+      isRecording &&
+      document.hidden
+    ) {
+
+      showMessage(
+        "⚠️ 錄音頁面目前不在前景。"
+        + "請避免關閉分頁、關閉 Chrome "
+        + "或讓系統停止瀏覽器，"
+        + "以降低長時間錄音中斷風險。",
+        "warning"
+      );
+
+    }
+
+  }
+);
+
+
+/* =====================================================
+   選擇分段時間
+===================================================== */
+
+segmentMinutes.addEventListener(
+  "change",
+  function() {
+
+    if (
+      isRecording
+    ) {
+
+      /*
+       * 錄音開始後禁止改變分段設定，
+       * 避免本段計時基準混亂。
+       */
+
+      showMessage(
+        "錄音進行中不能修改分段時間。"
+        + "請先結束目前會議，再重新設定。",
+        "warning"
+      );
+
+      return;
+
+    }
+
+
+    summaryInterval.textContent =
+      `每 ${segmentMinutes.value} 分鐘`;
 
   }
 );
@@ -1337,32 +1684,6 @@ startBtn.addEventListener(
 stopBtn.addEventListener(
   "click",
   stopMeeting
-);
-
-
-/* =====================================================
-   頁面可見性
-===================================================== */
-
-document.addEventListener(
-  "visibilitychange",
-  function() {
-
-    if (
-      isRecording &&
-      document.hidden
-    ) {
-
-      showMessage(
-        "⚠️ 錄音頁面目前不在前景。"
-        + "請避免關閉分頁或停止 Chrome，"
-        + "以降低長時間錄音中斷風險。",
-        "warning"
-      );
-
-    }
-
-  }
 );
 
 </script>
