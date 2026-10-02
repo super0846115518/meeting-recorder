@@ -1021,9 +1021,10 @@ function checkSegmentLimit() {
       segmentStartTime
     ) / 1000;
 
-
-  const limit =
-    20;
+const limit =
+    Number(
+        segmentMinutes.value
+    ) * 60;
 
   if (
     elapsed >= limit
