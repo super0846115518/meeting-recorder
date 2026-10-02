@@ -1,692 +1,490 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  >
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+>
 
-  <title>手機會議錄音測試</title>
+<title>智慧會議錄音系統</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
 
-    body {
-      margin: 0;
-      padding: 20px;
-      background: #f4f6f8;
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Noto Sans TC",
-        "Microsoft JhengHei",
-        sans-serif;
-      color: #202124;
-    }
+* {
+  box-sizing: border-box;
+}
 
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
+body {
+  margin: 0;
+  background: #f3f5f7;
+  color: #202124;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Noto Sans TC",
+    "Microsoft JhengHei",
+    sans-serif;
+}
 
-    h1 {
-      text-align: center;
-      margin: 15px 0 8px;
-      font-size: 26px;
-    }
+.container {
+  width: 100%;
+  max-width: 680px;
+  margin: auto;
+  padding: 16px;
+}
 
-    .subtitle {
-      text-align: center;
-      color: #6b7280;
-      margin-bottom: 24px;
-    }
+.header {
+  text-align: center;
+  padding: 12px 0 20px;
+}
 
-    .card {
-      background: white;
-      border-radius: 18px;
-      padding: 22px;
-      margin-bottom: 16px;
-      box-shadow: 0 3px 14px rgba(0,0,0,0.08);
-    }
+.header h1 {
+  margin: 0;
+  font-size: 26px;
+}
 
-    .status {
-      text-align: center;
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 18px;
-    }
+.header p {
+  margin: 8px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
 
-    .timer {
-      text-align: center;
-      font-size: 48px;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      margin: 20px 0;
-    }
+.card {
+  background: white;
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 15px;
+  box-shadow: 0 3px 14px rgba(0,0,0,.07);
+}
 
-    button {
-      width: 100%;
-      border: none;
-      border-radius: 14px;
-      padding: 16px;
-      font-size: 18px;
-      font-weight: 700;
-      margin-top: 10px;
-      cursor: pointer;
-    }
+label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
 
-    #startBtn {
-      background: #1976d2;
-      color: white;
-    }
+input,
+select {
+  width: 100%;
+  border: 1px solid #d0d5da;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 16px;
+  background: white;
+}
 
-    #stopBtn {
-      background: #d32f2f;
-      color: white;
-    }
+.status {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
 
-    #playBtn {
-      background: #388e3c;
-      color: white;
-    }
+.recording {
+  color: #c62828;
+}
 
-    button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
+.idle {
+  color: #555;
+}
 
-    .info {
-      background: #eef4ff;
-      border-radius: 12px;
-      padding: 14px;
-      line-height: 1.7;
-      font-size: 14px;
-    }
+.timer {
+  text-align: center;
+  font-size: 52px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+  margin: 10px 0 4px;
+}
 
-    .error {
-      display: none;
-      background: #ffebee;
-      color: #b71c1c;
-      border-radius: 12px;
-      padding: 14px;
-      margin-top: 15px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
+.segment-info {
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
 
-    .success {
-      display: none;
-      background: #e8f5e9;
-      color: #1b5e20;
-      border-radius: 12px;
-      padding: 14px;
-      margin-top: 15px;
-    }
+button {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
 
-    audio {
-      width: 100%;
-      margin-top: 15px;
-    }
+.start {
+  background: #1976d2;
+  color: white;
+}
 
-    .diagnostic {
-      font-family: monospace;
-      font-size: 12px;
-      background: #f7f7f7;
-      border-radius: 10px;
-      padding: 12px;
-      margin-top: 15px;
-      word-break: break-all;
-    }
-  </style>
+.stop {
+  background: #d32f2f;
+  color: white;
+}
+
+.secondary {
+  background: #eeeeee;
+  color: #222;
+}
+
+button:disabled {
+  opacity: .45;
+}
+
+.segment {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 10px;
+}
+
+.segment-title {
+  font-weight: 700;
+}
+
+.segment-meta {
+  color: #666;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.segment audio {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.success {
+  background: #e8f5e9;
+  color: #1b5e20;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 12px;
+}
+
+.error {
+  background: #ffebee;
+  color: #b71c1c;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.warning {
+  background: #fff8e1;
+  color: #7a5200;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 12px;
+}
+
+.diagnostic {
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  background: #f7f7f7;
+  border-radius: 10px;
+  padding: 12px;
+  word-break: break-word;
+}
+
+.hidden {
+  display: none;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.summary-row:last-child {
+  border-bottom: 0;
+}
+
+</style>
 </head>
 
 <body>
 
 <div class="container">
 
-  <h1>🎙️ 手機會議錄音</h1>
-
-  <div class="subtitle">
-    Android Chrome 錄音功能測試版
+  <div class="header">
+    <h1>🎙️ 智慧會議錄音系統</h1>
+    <p>Android Chrome 長時間自動分段錄音</p>
   </div>
+
+
+  <!-- 會議設定 -->
 
   <div class="card">
 
-    <div id="status" class="status">
+    <label for="meetingName">
+      會議名稱
+    </label>
+
+    <input
+      id="meetingName"
+      type="text"
+      placeholder="例如：工程進度會議"
+    >
+
+    <br><br>
+
+    <label for="segmentMinutes">
+      自動分段時間
+    </label>
+
+    <select id="segmentMinutes">
+
+      <option value="10">
+        每 10 分鐘
+      </option>
+
+      <option value="30">
+        每 30 分鐘
+      </option>
+
+      <option value="60">
+        每 60 分鐘
+      </option>
+
+    </select>
+
+  </div>
+
+
+  <!-- 錄音控制 -->
+
+  <div class="card">
+
+    <div
+      id="status"
+      class="status idle"
+    >
       尚未開始錄音
     </div>
 
-    <div id="timer" class="timer">
-      00:00
+    <div
+      id="timer"
+      class="timer"
+    >
+      00:00:00
     </div>
 
-    <button id="startBtn">
-      🎙️ 開始錄音
+    <div
+      id="segmentInfo"
+      class="segment-info"
+    >
+      尚無錄音分段
+    </div>
+
+
+    <button
+      id="startBtn"
+      class="start"
+    >
+      🎙️ 開始會議錄音
     </button>
 
-    <button id="stopBtn" disabled>
-      ⏹ 結束錄音
+
+    <button
+      id="stopBtn"
+      class="stop"
+      disabled
+    >
+      ⏹ 結束會議
     </button>
 
-    <button id="playBtn" disabled>
-      ▶️ 播放錄音
-    </button>
 
-    <div id="success" class="success"></div>
-
-    <div id="error" class="error"></div>
-
-    <audio id="audioPlayer" controls style="display:none;"></audio>
+    <div
+      id="message"
+      class="hidden"
+    ></div>
 
   </div>
 
+
+  <!-- 會議統計 -->
+
   <div class="card">
 
-    <div class="info">
-      <strong>本測試只驗證手機錄音功能</strong><br>
-      ① 點擊開始錄音<br>
-      ② Android Chrome 應要求麥克風權限<br>
-      ③ 選擇「允許」<br>
-      ④ 錄音約 10 秒<br>
-      ⑤ 點擊結束錄音<br>
-      ⑥ 播放錄音確認聲音正常
+    <h3>📊 錄音狀態</h3>
+
+    <div class="summary-row">
+      <span>會議名稱</span>
+      <strong id="summaryName">-</strong>
     </div>
 
-    <div id="diagnostic" class="diagnostic"></div>
+    <div class="summary-row">
+      <span>分段設定</span>
+      <strong id="summaryInterval">-</strong>
+    </div>
+
+    <div class="summary-row">
+      <span>已完成分段</span>
+      <strong id="summarySegments">0</strong>
+    </div>
+
+    <div class="summary-row">
+      <span>總錄音時間</span>
+      <strong id="summaryDuration">00:00:00</strong>
+    </div>
+
+  </div>
+
+
+  <!-- 錄音分段 -->
+
+  <div class="card">
+
+    <h3>🎧 錄音分段</h3>
+
+    <div id="segments">
+      尚無完成的錄音分段
+    </div>
+
+  </div>
+
+
+  <!-- 系統診斷 -->
+
+  <div class="card">
+
+    <h3>🔧 系統診斷</h3>
+
+    <div
+      id="diagnostic"
+      class="diagnostic"
+    ></div>
 
   </div>
 
 </div>
 
+
 <script>
 
+/* =====================================================
+   全域變數
+===================================================== */
+
 let mediaStream = null;
+
 let mediaRecorder = null;
+
 let audioChunks = [];
-let audioBlob = null;
-let audioUrl = null;
 
-let timerInterval = null;
-let startTime = null;
+let segmentIndex = 0;
+
+let segmentStartTime = null;
+
+let meetingStartTime = null;
+
+let totalTimer = null;
+
+let segmentTimer = null;
+
+let currentSegmentBlob = null;
+
+let segmentUrl = null;
+
+let isRecording = false;
+
+let stoppingMeeting = false;
 
 
-/* ================================
+/* =====================================================
    DOM
-================================ */
+===================================================== */
 
-const startBtn = document.getElementById("startBtn");
-const stopBtn = document.getElementById("stopBtn");
-const playBtn = document.getElementById("playBtn");
+const meetingName =
+  document.getElementById("meetingName");
 
-const statusEl = document.getElementById("status");
-const timerEl = document.getElementById("timer");
+const segmentMinutes =
+  document.getElementById("segmentMinutes");
 
-const errorEl = document.getElementById("error");
-const successEl = document.getElementById("success");
+const startBtn =
+  document.getElementById("startBtn");
 
-const audioPlayer = document.getElementById("audioPlayer");
-const diagnosticEl = document.getElementById("diagnostic");
+const stopBtn =
+  document.getElementById("stopBtn");
+
+const statusEl =
+  document.getElementById("status");
+
+const timerEl =
+  document.getElementById("timer");
+
+const segmentInfo =
+  document.getElementById("segmentInfo");
+
+const messageEl =
+  document.getElementById("message");
+
+const segmentsEl =
+  document.getElementById("segments");
+
+const diagnosticEl =
+  document.getElementById("diagnostic");
+
+const summaryName =
+  document.getElementById("summaryName");
+
+const summaryInterval =
+  document.getElementById("summaryInterval");
+
+const summarySegments =
+  document.getElementById("summarySegments");
+
+const summaryDuration =
+  document.getElementById("summaryDuration");
 
 
-/* ================================
-   環境檢查
-================================ */
+/* =====================================================
+   工具
+===================================================== */
 
-function checkEnvironment() {
+function formatTime(seconds) {
 
-  const secure =
-    window.isSecureContext;
-
-  const mediaDevices =
-    !!navigator.mediaDevices;
-
-  const getUserMedia =
-    !!(
-      navigator.mediaDevices &&
-      navigator.mediaDevices.getUserMedia
+  seconds =
+    Math.max(
+      0,
+      Math.floor(seconds)
     );
 
-  diagnosticEl.innerHTML =
-    "HTTPS / Secure Context："
-    + (secure ? "OK" : "FAIL")
-    + "<br>"
-    + "navigator.mediaDevices："
-    + (mediaDevices ? "OK" : "FAIL")
-    + "<br>"
-    + "getUserMedia："
-    + (getUserMedia ? "OK" : "FAIL")
-    + "<br>"
-    + "MediaRecorder："
-    + (window.MediaRecorder ? "OK" : "FAIL")
-    + "<br>"
-    + "瀏覽器："
-    + navigator.userAgent;
+  const h =
+    Math.floor(seconds / 3600)
+      .toString()
+      .padStart(2, "0");
 
+  const m =
+    Math.floor(
+      (seconds % 3600) / 60
+    )
+      .toString()
+      .padStart(2, "0");
+
+  const s =
+    (seconds % 60)
+      .toString()
+      .padStart(2, "0");
+
+  return `${h}:${m}:${s}`;
 }
 
-checkEnvironment();
-
-
-/* ================================
-   錯誤處理
-================================ */
-
-function showError(message) {
-
-  errorEl.style.display = "block";
-  errorEl.textContent = message;
-
-  successEl.style.display = "none";
-
-}
-
-function clearMessages() {
-
-  errorEl.style.display = "none";
-  successEl.style.display = "none";
-
-}
-
-function showSuccess(message) {
-
-  successEl.style.display = "block";
-  successEl.textContent = message;
-
-  errorEl.style.display = "none";
-
-}
-
-
-/* ================================
-   計時器
-================================ */
-
-function startTimer() {
-
-  startTime = Date.now();
-
-  timerInterval = setInterval(() => {
-
-    const elapsed =
-      Math.floor(
-        (Date.now() - startTime) / 1000
-      );
-
-    const minutes =
-      Math.floor(elapsed / 60)
-        .toString()
-        .padStart(2, "0");
-
-    const seconds =
-      (elapsed % 60)
-        .toString()
-        .padStart(2, "0");
-
-    timerEl.textContent =
-      minutes + ":" + seconds;
-
-  }, 250);
-
-}
-
-
-function stopTimer() {
-
-  clearInterval(timerInterval);
-
-  timerInterval = null;
-
-}
-
-
-/* ================================
-   開始錄音
-================================ */
-
-async function startRecording() {
-
-  clearMessages();
-
-  if (!window.isSecureContext) {
-
-    showError(
-      "目前不是安全 HTTPS 網頁。\n\n"
-      + "請使用 https:// 開頭的網址。"
-    );
-
-    return;
-  }
-
-
-  if (
-    !navigator.mediaDevices ||
-    !navigator.mediaDevices.getUserMedia
-  ) {
-
-    showError(
-      "此瀏覽器無法使用 getUserMedia。\n\n"
-      + "請使用最新版 Android Chrome。"
-    );
-
-    return;
-  }
-
-
-  if (!window.MediaRecorder) {
-
-    showError(
-      "此瀏覽器不支援 MediaRecorder。"
-    );
-
-    return;
-  }
-
-
-  try {
-
-    statusEl.textContent =
-      "正在要求麥克風權限…";
-
-    /*
-      這裡直接由使用者點擊事件呼叫
-      getUserMedia()
-    */
-
-    mediaStream =
-      await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
-
-
-    /*
-      Android Chrome 通常支援 audio/webm
-    */
-
-    let mimeType = "";
-
-    if (
-      MediaRecorder.isTypeSupported(
-        "audio/webm;codecs=opus"
-      )
-    ) {
-
-      mimeType =
-        "audio/webm;codecs=opus";
-
-    } else if (
-      MediaRecorder.isTypeSupported(
-        "audio/webm"
-      )
-    ) {
-
-      mimeType = "audio/webm";
-
-    }
-
-
-    const options =
-      mimeType
-        ? { mimeType }
-        : undefined;
-
-
-    audioChunks = [];
-
-
-    mediaRecorder =
-      new MediaRecorder(
-        mediaStream,
-        options
-      );
-
-
-    mediaRecorder.ondataavailable =
-      function(event) {
-
-        if (event.data && event.data.size > 0) {
-
-          audioChunks.push(event.data);
-
-        }
-
-      };
-
-
-    mediaRecorder.onstop =
-      function() {
-
-        audioBlob =
-          new Blob(
-            audioChunks,
-            {
-              type:
-                mediaRecorder.mimeType ||
-                "audio/webm"
-            }
-          );
-
-
-        if (audioUrl) {
-
-          URL.revokeObjectURL(audioUrl);
-
-        }
-
-
-        audioUrl =
-          URL.createObjectURL(
-            audioBlob
-          );
-
-
-        audioPlayer.src =
-          audioUrl;
-
-        audioPlayer.style.display =
-          "block";
-
-        playBtn.disabled =
-          false;
-
-
-        showSuccess(
-          "錄音完成。\n"
-          + "檔案大小："
-          + formatBytes(audioBlob.size)
-          + "\n"
-          + "格式："
-          + audioBlob.type
-        );
-
-
-        statusEl.textContent =
-          "錄音完成";
-
-      };
-
-
-    mediaRecorder.onerror =
-      function(event) {
-
-        showError(
-          "MediaRecorder 發生錯誤：\n"
-          + event.error
-        );
-
-      };
-
-
-    mediaRecorder.start(1000);
-
-
-    startTimer();
-
-
-    statusEl.textContent =
-      "🔴 正在錄音";
-
-    startBtn.disabled =
-      true;
-
-    stopBtn.disabled =
-      false;
-
-    playBtn.disabled =
-      true;
-
-
-  } catch (error) {
-
-    console.error(
-      "getUserMedia error:",
-      error
-    );
-
-
-    let message =
-      "無法開始錄音。\n\n";
-
-
-    message +=
-      "錯誤名稱："
-      + error.name
-      + "\n";
-
-
-    message +=
-      "錯誤訊息："
-      + error.message
-      + "\n\n";
-
-
-    if (
-      error.name ===
-      "NotAllowedError"
-    ) {
-
-      message +=
-        "Chrome 拒絕了麥克風權限。\n"
-        + "請確認網站麥克風權限已允許。";
-
-    } else if (
-      error.name ===
-      "NotFoundError"
-    ) {
-
-      message +=
-        "找不到手機麥克風。";
-
-    } else if (
-      error.name ===
-      "NotReadableError"
-    ) {
-
-      message +=
-        "麥克風可能被其他 App 使用。";
-
-    } else if (
-      error.name ===
-      "SecurityError"
-    ) {
-
-      message +=
-        "瀏覽器因安全政策拒絕麥克風。";
-
-    } else {
-
-      message +=
-        "請查看下方系統診斷資訊。";
-
-    }
-
-
-    showError(message);
-
-
-    statusEl.textContent =
-      "錄音啟動失敗";
-
-  }
-
-}
-
-
-/* ================================
-   結束錄音
-================================ */
-
-function stopRecording() {
-
-  if (
-    !mediaRecorder ||
-    mediaRecorder.state === "inactive"
-  ) {
-
-    return;
-
-  }
-
-
-  mediaRecorder.stop();
-
-  stopTimer();
-
-
-  if (mediaStream) {
-
-    mediaStream
-      .getTracks()
-      .forEach(
-        track => track.stop()
-      );
-
-  }
-
-
-  startBtn.disabled =
-    false;
-
-  stopBtn.disabled =
-    true;
-
-}
-
-
-/* ================================
-   播放
-================================ */
-
-function playRecording() {
-
-  if (!audioPlayer.src) {
-
-    return;
-
-  }
-
-  audioPlayer.play();
-
-}
-
-
-/* ================================
-   格式化大小
-================================ */
 
 function formatBytes(bytes) {
 
-  if (bytes === 0) {
-
+  if (!bytes) {
     return "0 Bytes";
-
   }
 
   const units = [
@@ -709,27 +507,856 @@ function formatBytes(bytes) {
     + " "
     + units[i]
   );
+}
+
+
+function showMessage(
+  text,
+  type = "success"
+) {
+
+  messageEl.className = type;
+
+  messageEl.textContent = text;
 
 }
 
 
-/* ================================
+function clearMessage() {
+
+  messageEl.className = "hidden";
+
+  messageEl.textContent = "";
+
+}
+
+
+/* =====================================================
+   系統診斷
+===================================================== */
+
+async function runDiagnostics() {
+
+  let permissionState =
+    "unknown";
+
+  try {
+
+    if (
+      navigator.permissions
+    ) {
+
+      const permission =
+        await navigator.permissions.query({
+          name: "microphone"
+        });
+
+      permissionState =
+        permission.state;
+    }
+
+  } catch (error) {
+
+    permissionState =
+      "無法取得";
+
+  }
+
+
+  diagnosticEl.innerHTML =
+
+    "HTTPS / Secure Context："
+    + (
+      window.isSecureContext
+        ? "OK"
+        : "FAIL"
+    )
+
+    + "<br>"
+
+    + "navigator.mediaDevices："
+    + (
+      navigator.mediaDevices
+        ? "OK"
+        : "FAIL"
+    )
+
+    + "<br>"
+
+    + "getUserMedia："
+    + (
+      navigator.mediaDevices &&
+      navigator.mediaDevices.getUserMedia
+        ? "OK"
+        : "FAIL"
+    )
+
+    + "<br>"
+
+    + "MediaRecorder："
+    + (
+      window.MediaRecorder
+        ? "OK"
+        : "FAIL"
+    )
+
+    + "<br>"
+
+    + "麥克風 Permission State："
+    + permissionState
+
+    + "<br>"
+
+    + "瀏覽器："
+    + navigator.userAgent;
+
+}
+
+runDiagnostics();
+
+
+/* =====================================================
+   計時器
+===================================================== */
+
+function updateTimers() {
+
+  if (!meetingStartTime) {
+    return;
+  }
+
+  const now =
+    Date.now();
+
+  const totalSeconds =
+    (now - meetingStartTime)
+    / 1000;
+
+  timerEl.textContent =
+    formatTime(totalSeconds);
+
+  summaryDuration.textContent =
+    formatTime(totalSeconds);
+
+
+  if (segmentStartTime) {
+
+    const segmentSeconds =
+      (now - segmentStartTime)
+      / 1000;
+
+    const limitSeconds =
+      Number(
+        segmentMinutes.value
+      ) * 60;
+
+    segmentInfo.textContent =
+      `第 ${segmentIndex} 段｜`
+      + `本段 ${formatTime(segmentSeconds)} / `
+      + `${formatTime(limitSeconds)}`;
+
+  }
+
+}
+
+
+/* =====================================================
+   建立 MediaRecorder
+===================================================== */
+
+function createRecorder() {
+
+  let mimeType = "";
+
+  if (
+    MediaRecorder.isTypeSupported(
+      "audio/webm;codecs=opus"
+    )
+  ) {
+
+    mimeType =
+      "audio/webm;codecs=opus";
+
+  } else if (
+    MediaRecorder.isTypeSupported(
+      "audio/webm"
+    )
+  ) {
+
+    mimeType =
+      "audio/webm";
+
+  }
+
+
+  const options =
+    mimeType
+      ? { mimeType }
+      : undefined;
+
+
+  const recorder =
+    new MediaRecorder(
+      mediaStream,
+      options
+    );
+
+
+  recorder.ondataavailable =
+    event => {
+
+      if (
+        event.data &&
+        event.data.size > 0
+      ) {
+
+        audioChunks.push(
+          event.data
+        );
+
+      }
+
+    };
+
+
+  recorder.onerror =
+    event => {
+
+      showMessage(
+        "錄音發生錯誤："
+        + (
+          event.error
+            ? event.error.message
+            : "未知錯誤"
+        ),
+        "error"
+      );
+
+    };
+
+
+  return recorder;
+}
+
+
+/* =====================================================
+   開始一個分段
+===================================================== */
+
+function startSegment() {
+
+  if (!mediaStream) {
+    return;
+  }
+
+
+  audioChunks = [];
+
+  segmentIndex++;
+
+  segmentStartTime =
+    Date.now();
+
+
+  mediaRecorder =
+    createRecorder();
+
+
+  mediaRecorder.onstop =
+    handleSegmentStop;
+
+
+  mediaRecorder.start(1000);
+
+
+  statusEl.textContent =
+    `🔴 錄音中｜第 ${segmentIndex} 段`;
+
+  statusEl.className =
+    "status recording";
+
+
+  segmentInfo.textContent =
+    `第 ${segmentIndex} 段正在錄音`;
+
+}
+
+
+/* =====================================================
+   分段結束
+===================================================== */
+
+function handleSegmentStop() {
+
+  const blob =
+    new Blob(
+      audioChunks,
+      {
+        type:
+          mediaRecorder.mimeType ||
+          "audio/webm"
+      }
+    );
+
+
+  const start =
+    segmentStartTime;
+
+
+  const end =
+    Date.now();
+
+
+  const duration =
+    (end - start) / 1000;
+
+
+  saveSegment(
+    blob,
+    segmentIndex,
+    duration
+  );
+
+
+  if (
+    isRecording &&
+    !stoppingMeeting
+  ) {
+
+    setTimeout(
+      () => {
+
+        if (
+          isRecording &&
+          !stoppingMeeting
+        ) {
+
+          startSegment();
+
+        }
+
+      },
+      300
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   儲存分段
+===================================================== */
+
+function saveSegment(
+  blob,
+  index,
+  duration
+) {
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  if (
+    segmentsEl.textContent ===
+    "尚無完成的錄音分段"
+  ) {
+
+    segmentsEl.innerHTML = "";
+
+  }
+
+
+  const wrapper =
+    document.createElement(
+      "div"
+    );
+
+  wrapper.className =
+    "segment";
+
+
+  const title =
+    document.createElement(
+      "div"
+    );
+
+  title.className =
+    "segment-title";
+
+  title.textContent =
+    `第 ${index} 段`;
+
+
+  const meta =
+    document.createElement(
+      "div"
+    );
+
+  meta.className =
+    "segment-meta";
+
+  meta.textContent =
+    `時間：${formatTime(duration)}｜`
+    + `大小：${formatBytes(blob.size)}｜`
+    + `格式：${blob.type}`;
+
+
+  const audio =
+    document.createElement(
+      "audio"
+    );
+
+  audio.controls =
+    true;
+
+  audio.src =
+    url;
+
+
+  const download =
+    document.createElement(
+      "button"
+    );
+
+  download.className =
+    "secondary";
+
+  download.textContent =
+    `⬇️ 儲存第 ${index} 段`;
+
+
+  download.onclick =
+    () => {
+
+      const a =
+        document.createElement(
+          "a"
+        );
+
+      a.href =
+        url;
+
+      const safeName =
+        (
+          meetingName.value.trim() ||
+          "meeting"
+        )
+        .replace(
+          /[\\/:*?"<>|]/g,
+          "_"
+        );
+
+
+      a.download =
+        `${safeName}_`
+        + `segment_${String(index).padStart(3, "0")}.webm`;
+
+
+      a.click();
+
+    };
+
+
+  wrapper.appendChild(
+    title
+  );
+
+  wrapper.appendChild(
+    meta
+  );
+
+  wrapper.appendChild(
+    audio
+  );
+
+  wrapper.appendChild(
+    download
+  );
+
+
+  segmentsEl.prepend(
+    wrapper
+  );
+
+
+  summarySegments.textContent =
+    document.querySelectorAll(
+      ".segment"
+    ).length;
+
+}
+
+
+/* =====================================================
+   自動分段監控
+===================================================== */
+
+function checkSegmentLimit() {
+
+  if (
+    !isRecording ||
+    !segmentStartTime
+  ) {
+
+    return;
+
+  }
+
+
+  const elapsed =
+    (
+      Date.now() -
+      segmentStartTime
+    ) / 1000;
+
+
+  const limit =
+    Number(
+      segmentMinutes.value
+    ) * 60;
+
+
+  if (
+    elapsed >= limit
+  ) {
+
+    rotateSegment();
+
+  }
+
+}
+
+
+function rotateSegment() {
+
+  if (
+    !mediaRecorder ||
+    mediaRecorder.state ===
+    "inactive"
+  ) {
+
+    return;
+
+  }
+
+
+  statusEl.textContent =
+    `⏳ 正在完成第 ${segmentIndex} 段`;
+
+
+  mediaRecorder.stop();
+
+}
+
+
+/* =====================================================
+   開始會議
+===================================================== */
+
+async function startMeeting() {
+
+  clearMessage();
+
+
+  if (
+    !window.isSecureContext
+  ) {
+
+    showMessage(
+      "目前不是 HTTPS 安全環境。",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if (
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.getUserMedia
+  ) {
+
+    showMessage(
+      "此瀏覽器不支援麥克風。",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if (!meetingName.value.trim()) {
+
+    meetingName.value =
+      "未命名會議";
+
+  }
+
+
+  try {
+
+    statusEl.textContent =
+      "正在取得麥克風權限…";
+
+
+    mediaStream =
+      await navigator.mediaDevices.getUserMedia({
+
+        audio: {
+
+          echoCancellation: true,
+
+          noiseSuppression: true,
+
+          autoGainControl: true
+
+        }
+
+      });
+
+
+    meetingStartTime =
+      Date.now();
+
+
+    segmentIndex = 0;
+
+    isRecording = true;
+
+    stoppingMeeting = false;
+
+
+    summaryName.textContent =
+      meetingName.value.trim();
+
+
+    summaryInterval.textContent =
+      `每 ${segmentMinutes.value} 分鐘`;
+
+
+    startBtn.disabled =
+      true;
+
+    stopBtn.disabled =
+      false;
+
+
+    totalTimer =
+      setInterval(
+        updateTimers,
+        250
+      );
+
+
+    segmentTimer =
+      setInterval(
+        checkSegmentLimit,
+        1000
+      );
+
+
+    startSegment();
+
+
+    showMessage(
+      "會議錄音已開始。",
+      "success"
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      error
+    );
+
+
+    let message =
+      "無法開始錄音。\n\n"
+      + "錯誤名稱："
+      + error.name
+      + "\n"
+      + "錯誤訊息："
+      + error.message;
+
+
+    showMessage(
+      message,
+      "error"
+    );
+
+
+    statusEl.textContent =
+      "錄音啟動失敗";
+
+  }
+
+}
+
+
+/* =====================================================
+   結束會議
+===================================================== */
+
+function stopMeeting() {
+
+  if (!isRecording) {
+    return;
+  }
+
+
+  stoppingMeeting =
+    true;
+
+  isRecording =
+    false;
+
+
+  if (
+    segmentTimer
+  ) {
+
+    clearInterval(
+      segmentTimer
+    );
+
+    segmentTimer =
+      null;
+
+  }
+
+
+  if (
+    totalTimer
+  ) {
+
+    clearInterval(
+      totalTimer
+    );
+
+    totalTimer =
+      null;
+
+  }
+
+
+  if (
+    mediaRecorder &&
+    mediaRecorder.state !==
+    "inactive"
+  ) {
+
+    mediaRecorder.stop();
+
+  }
+
+
+  if (mediaStream) {
+
+    mediaStream
+      .getTracks()
+      .forEach(
+        track =>
+          track.stop()
+      );
+
+    mediaStream =
+      null;
+
+  }
+
+
+  startBtn.disabled =
+    false;
+
+  stopBtn.disabled =
+    true;
+
+
+  statusEl.textContent =
+    "✅ 會議錄音完成";
+
+  statusEl.className =
+    "status idle";
+
+
+  segmentInfo.textContent =
+    `共完成 ${segmentIndex} 個錄音分段`;
+
+
+  showMessage(
+    `會議錄音完成，共 ${segmentIndex} 個分段。`,
+    "success"
+  );
+
+}
+
+
+/* =====================================================
+   防止誤關閉
+===================================================== */
+
+window.addEventListener(
+  "beforeunload",
+  function(event) {
+
+    if (isRecording) {
+
+      event.preventDefault();
+
+      event.returnValue =
+        "";
+
+    }
+
+  }
+);
+
+
+/* =====================================================
    按鈕
-================================ */
+===================================================== */
 
 startBtn.addEventListener(
   "click",
-  startRecording
+  startMeeting
 );
 
 stopBtn.addEventListener(
   "click",
-  stopRecording
+  stopMeeting
 );
 
-playBtn.addEventListener(
-  "click",
-  playRecording
+
+/* =====================================================
+   頁面可見性
+===================================================== */
+
+document.addEventListener(
+  "visibilitychange",
+  function() {
+
+    if (
+      isRecording &&
+      document.hidden
+    ) {
+
+      showMessage(
+        "⚠️ 錄音頁面目前不在前景。"
+        + "請避免關閉分頁或停止 Chrome，"
+        + "以降低長時間錄音中斷風險。",
+        "warning"
+      );
+
+    }
+
+  }
 );
 
 </script>
